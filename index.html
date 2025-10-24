@@ -2,7 +2,7 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Login - Local Job Listings</title>
+<title>Create Account - Local Job Listings</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <script>
@@ -11,63 +11,64 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            DEFAULT: "#4F46E5",
-                            hover: "#4338CA",
-                        },
-                        background: '#0D0D0D', // Slightly off-black
-                        surface: '#171717',    // Slightly lighter for cards/inputs
-                        border: '#262626',      // Darker gray for borders
-                        'text-primary': '#F5F5F5',
-                        'text-secondary': '#A3A3A3',
+                        primary: "#4F46E5",
+                        'background-dark': '#0a0a0a',
+                        'surface-dark': '#1a1a1a',
+                        'text-dark': '#f9fafb',
+                        'text-secondary-dark': '#a1a1aa',
+                        'border-dark': '#262626',
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
                     },
                 },
             },
         };
     </script>
 </head>
-<body class="bg-background font-sans text-text-primary antialiased">
+<body class="bg-background-dark font-display text-text-dark">
 <div class="flex items-center justify-center min-h-screen">
-<div class="w-full max-w-md p-8 space-y-8 bg-surface rounded-lg shadow-lg">
+<div class="w-full max-w-md p-8 space-y-8 bg-surface-dark rounded-lg shadow-lg">
 <div>
-<h1 class="text-3xl font-bold text-center text-text-primary">
-                    Welcome Back
-                </h1>
-<p class="mt-2 text-center text-text-secondary">
-                    Log in to find local job listings.
-                </p>
+<h2 class="text-3xl font-bold text-center text-text-dark">Create your account</h2>
+<p class="mt-2 text-center text-text-secondary-dark">
+                to start finding local jobs with AI.
+            </p>
 </div>
 <form action="#" class="mt-8 space-y-6" method="POST">
 <div class="space-y-4 rounded-md shadow-sm">
 <div>
-<label class="sr-only" for="email-address">Email or Username</label>
-<input autocomplete="email" class="relative block w-full px-3 py-3 bg-background border border-border placeholder-text-secondary rounded-md focus:outline-none focus:ring-primary-DEFAULT focus:border-primary-DEFAULT focus:z-10 sm:text-sm" id="email-address" name="email" placeholder="Email or Username" required="" type="email"/>
+<label class="sr-only" for="email-address">Email address</label>
+<input autocomplete="email" class="relative block w-full px-3 py-3 bg-background-dark border border-border-dark placeholder-text-secondary-dark text-text-dark rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" id="email-address" name="email" placeholder="Email address" required="" type="email"/>
+</div>
+<div>
+<label class="sr-only" for="city">City</label>
+<input autocomplete="address-level2" class="relative block w-full px-3 py-3 bg-background-dark border border-border-dark placeholder-text-secondary-dark text-text-dark rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" id="city" name="city" placeholder="Your City" required="" type="text"/>
 </div>
 <div>
 <label class="sr-only" for="password">Password</label>
-<input autocomplete="current-password" class="relative block w-full px-3 py-3 bg-background border border-border placeholder-text-secondary rounded-md focus:outline-none focus:ring-primary-DEFAULT focus:border-primary-DEFAULT focus:z-10 sm:text-sm" id="password" name="password" placeholder="Password" required="" type="password"/>
+<input autocomplete="new-password" class="relative block w-full px-3 py-3 bg-background-dark border border-border-dark placeholder-text-secondary-dark text-text-dark rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" id="password" name="password" placeholder="Password" required="" type="password"/>
 </div>
-</div>
-<div class="flex items-center justify-end">
-<div class="text-sm">
-<a class="font-medium text-primary-DEFAULT hover:text-primary-hover" href="#">
-                            Forgot your password?
-                        </a>
+<div>
+<label class="sr-only" for="confirm-password">Confirm Password</label>
+<input autocomplete="new-password" class="relative block w-full px-3 py-3 bg-background-dark border border-border-dark placeholder-text-secondary-dark text-text-dark rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required="" type="password"/>
 </div>
 </div>
 <div>
-<button class="group relative flex justify-center w-full py-3 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-primary-DEFAULT hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary-DEFAULT" type="submit">
-                        Login
-                    </button>
+<button class="group relative flex justify-center w-full px-4 py-3 text-sm font-semibold text-white bg-primary border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background-dark" type="submit">
+                    Create Account
+                </button>
 </div>
 </form>
-<div class="text-sm text-center text-text-secondary">
-                Don't have an account? <a class="font-medium text-primary-DEFAULT hover:text-primary-hover" href="#">Sign up</a>
+<p class="mt-6 text-sm text-center text-text-secondary-dark">
+            Already have an account?
+            <a class="font-medium text-primary hover:text-indigo-500" href="#">
+                Log in
+            </a>
+</p>
 </div>
 </div>
-</div>
-
 </body></html>
