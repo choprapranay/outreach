@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - Local Job Listings</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: "#4F46E5",
+                            hover: "#4338CA",
+                        },
+                        background: '#0D0D0D', // Slightly off-black
+                        surface: '#171717',    // Slightly lighter for cards/inputs
+                        border: '#262626',      // Darker gray for borders
+                        'text-primary': '#F5F5F5',
+                        'text-secondary': '#A3A3A3',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+<body class="bg-background font-sans text-text-primary antialiased">
+<div class="flex items-center justify-center min-h-screen">
+<div class="w-full max-w-md p-8 space-y-8 bg-surface rounded-lg shadow-lg">
+<div>
+<h1 class="text-3xl font-bold text-center text-text-primary">
+                    Welcome Back
+                </h1>
+<p class="mt-2 text-center text-text-secondary">
+                    Log in to find local job listings.
+                </p>
+</div>
+<form action="#" class="mt-8 space-y-6" method="POST">
+<div class="space-y-4 rounded-md shadow-sm">
+<div>
+<label class="sr-only" for="email-address">Email or Username</label>
+<input autocomplete="email" class="relative block w-full px-3 py-3 bg-background border border-border placeholder-text-secondary rounded-md focus:outline-none focus:ring-primary-DEFAULT focus:border-primary-DEFAULT focus:z-10 sm:text-sm" id="email-address" name="email" placeholder="Email or Username" required="" type="email"/>
+</div>
+<div>
+<label class="sr-only" for="password">Password</label>
+<input autocomplete="current-password" class="relative block w-full px-3 py-3 bg-background border border-border placeholder-text-secondary rounded-md focus:outline-none focus:ring-primary-DEFAULT focus:border-primary-DEFAULT focus:z-10 sm:text-sm" id="password" name="password" placeholder="Password" required="" type="password"/>
+</div>
+</div>
+<div class="flex items-center justify-end">
+<div class="text-sm">
+<a class="font-medium text-primary-DEFAULT hover:text-primary-hover" href="#">
+                            Forgot your password?
+                        </a>
+</div>
+</div>
+<div>
+<button class="group relative flex justify-center w-full py-3 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-primary-DEFAULT hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary-DEFAULT" type="submit">
+                        Login
+                    </button>
+</div>
+</form>
+<div class="text-sm text-center text-text-secondary">
+                Don't have an account? <a class="font-medium text-primary-DEFAULT hover:text-primary-hover" href="#">Sign up</a>
+</div>
+</div>
+</div>
+
+</body></html>
