@@ -9,8 +9,13 @@ load_dotenv()
 GDC_API_KEY = os.getenv("GDC_API_KEY")
 
 # Front end connection
-# CORS set up
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ------------------------------------------------------------------------------------
@@ -99,7 +104,8 @@ def get_businesses(
             "phone": phone or "N/A"
         })
 
-    return {results}
+    return {"results": results}
+
 
 @app.get("/health")
 def health():
