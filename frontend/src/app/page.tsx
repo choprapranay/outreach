@@ -23,15 +23,6 @@ export default function Home() {
               <div className="text-xl font-medium text-white">
                 outreach
               </div>
-              {/* Navigation Icons */}
-              <nav className="flex items-center space-x-1">
-                <a className="p-2 rounded-lg bg-[#0a0a0a] text-blue-500" href="#">
-                  <span className="material-icons text-xl">dashboard</span>
-                </a>
-                <a className="p-2 rounded-lg text-[#a3a3a3] hover:bg-[#0a0a0a]" href="#">
-                  <span className="material-icons text-xl">list_alt</span>
-                </a>
-              </nav>
             </div>
             <div className="flex items-center space-x-2">
               {/* Search Button */}
