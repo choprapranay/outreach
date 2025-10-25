@@ -1,65 +1,101 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import PreferencesModal from "@/components/PreferencesModal";
 
 export default function Home() {
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-[#e5e5e5]">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        {/* Preferences Modal */}
+        <PreferencesModal 
+          isOpen={isPreferencesOpen} 
+          onClose={() => setIsPreferencesOpen(false)} 
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+
+        {/* Header */}
+        <header className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[95%] max-w-5xl">
+          <div className="bg-[#111111]/80 backdrop-blur-md rounded-xl shadow-2xl p-2 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {/* Logo */}
+              <div className="text-xl font-medium text-white">
+                outreach
+              </div>
+              {/* Navigation Icons */}
+              <nav className="flex items-center space-x-1">
+                <a className="p-2 rounded-lg bg-[#0a0a0a] text-blue-500" href="#">
+                  <span className="material-icons text-xl">dashboard</span>
+                </a>
+                <a className="p-2 rounded-lg text-[#a3a3a3] hover:bg-[#0a0a0a]" href="#">
+                  <span className="material-icons text-xl">list_alt</span>
+                </a>
+              </nav>
+            </div>
+            <div className="flex items-center space-x-2">
+              {/* Search Button */}
+              <button className="px-4 py-2 text-sm font-semibold text-white bg-blue-500/20 rounded-md hover:bg-blue-500/30 flex items-center space-x-2">
+                <span className="material-icons text-base">search</span>
+                <span>Start search</span>
+              </button>
+              {/* Run New Calls Button */}
+              <button className="px-4 py-2 text-sm font-semibold text-white bg-blue-500 rounded-md hover:bg-blue-700 flex items-center space-x-2 shadow-lg shadow-blue-500/20">
+                <span className="material-icons text-base">phone_in_talk</span>
+                <span>Run New Calls</span>
+              </button>
+              {/* Settings Button */}
+              <button 
+                onClick={() => setIsPreferencesOpen(true)}
+                className="p-2 rounded-lg text-[#a3a3a3] hover:bg-[#0a0a0a]"
+              >
+                <span className="material-icons text-xl">settings</span>
+              </button>
+              {/* Logout Button */}
+              <button className="p-2 rounded-lg text-[#a3a3a3] hover:bg-[#0a0a0a]">
+                <span className="material-icons text-xl">logout</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area - Blank Dark Grey Background */}
+        <main className="flex-1 flex overflow-hidden">
+          <div className="flex-1 bg-[#111111] relative">
+            {/* Blank dark grey background - map will be added later */}
+          </div>
+        </main>
+
+        {/* Business Table */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-10">
+          <div className="bg-[#111111]/80 backdrop-blur-md rounded-xl shadow-2xl">
+            {/* Table Header */}
+            <div className="p-4 flex justify-between items-center">
+              <h2 className="font-semibold">Businesses</h2>
+              <button className="p-1 rounded-md hover:bg-[#0a0a0a] text-[#a3a3a3]">
+                <span className="material-icons text-xl">unfold_less</span>
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs text-[#a3a3a3] uppercase">
+                  <tr>
+                    <th className="px-6 py-3" scope="col">Business Name</th>
+                    <th className="px-6 py-3" scope="col">Job Role</th>
+                    <th className="px-6 py-3" scope="col">Status</th>
+                    <th className="px-6 py-3 text-right" scope="col">Last Contact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Table data will be populated from backend */}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
