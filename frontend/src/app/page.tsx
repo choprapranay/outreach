@@ -22,9 +22,38 @@ export default function Home() {
         latitude: 43.6532,
         longitude: -79.3832,
     });
+    // Demo placeholder business - always appears first
+    const demoBosonAI: Business = {
+        id: "demo-bosonai",
+        name: "BosonAI",
+        jobRole: "Technology",
+        status: "Unknown",
+        lastContact: "—",
+        latitude: 43.6614914,
+        longitude: -79.3877483,
+        address: "2 Carleton Street, Toronto",
+        phone: "+12897950739",
+    };
+
     const [businesses, setBusinesses] = useState<Business[]>([]);
     const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // Helper function to calculate distance between two points (Haversine formula)
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371e3; // Earth's radius in meters
+        const φ1 = (lat1 * Math.PI) / 180;
+        const φ2 = (lat2 * Math.PI) / 180;
+        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+        const a =
+            Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Distance in meters
+    };
 
     // Fetch businesses from FastAPI backend
     const handleSearch = async () => {
@@ -36,30 +65,40 @@ export default function Home() {
             });
             if (keyword) params.append("keyword", keyword);
 
-            const res = await fetch(`http://127.0.0.1:8000/places?${params.toString()}`);
+            const res = await fetch(`http://127.0.0.1:8001/places?${params.toString()}`);
             const data = await res.json();
 
             if (res.ok && data && Array.isArray(data.results)) {
-                const formatted: Business[] = data.results.map((b: BackendBusiness, i: number) => ({
-                    id: `${b.name}-${i}`,
-                    name: b.name,
-                    jobRole: keyword || "N/A",
-                    status: "Unknown",
-                    lastContact: "—",
-                    latitude: b.lat,
-                    longitude: b.lng,
-                    address: b.address,
-                    phone: b.phone,
-                }));
+                const formatted: Business[] = data.results
+                    .map((b: BackendBusiness, i: number) => ({
+                        id: `${b.name}-${i}`,
+                        name: b.name,
+                        jobRole: keyword || "N/A",
+                        status: "Unknown",
+                        lastContact: "—",
+                        latitude: b.lat,
+                        longitude: b.lng,
+                        address: b.address,
+                        phone: b.phone,
+                    }))
+                    .filter((b: Business) => {
+                        // 1. Exclude businesses without phone numbers
+                        if (!b.phone || b.phone === "N/A" || b.phone === "incorrect format") {
+                            return false;
+                        }
 
-                // recenter map around businesses
-                if (formatted.length > 0) {
-                    const avgLat = formatted.reduce((s, f) => s + f.latitude, 0) / formatted.length;
-                    const avgLng = formatted.reduce((s, f) => s + f.longitude, 0) / formatted.length;
-                    setUserLocation({ latitude: avgLat, longitude: avgLng });
-                }
+                        // 2. Only include businesses within the specified radius
+                        const distance = calculateDistance(
+                            userLocation.latitude,
+                            userLocation.longitude,
+                            b.latitude,
+                            b.longitude
+                        );
+                        return distance <= radius;
+                    });
 
-                setBusinesses(formatted);
+                // Always keep BosonAI demo at the top
+                setBusinesses([demoBosonAI, ...formatted]);
             } else {
                 console.error("Unexpected response format:", data);
                 setBusinesses([]);
@@ -72,29 +111,118 @@ export default function Home() {
         }
     };
 
-    // Call button action
-    const handleCall = (b: Business) => {
-        if (b.phone && b.phone !== "N/A") {
-            window.open(`tel:${b.phone}`);
-        } else {
-            alert("No phone number available for this business.");
+    // Poll for call status and update business when complete
+    const pollCallStatus = async (callSid: string, businessId: string) => {
+        const maxAttempts = 60; // Poll for up to 5 minutes
+        let attempts = 0;
+
+        const poll = async () => {
+            try {
+                const response = await fetch(`http://localhost:8002/call-status/${callSid}`);
+                
+                if (response.ok) {
+                    const callData = await response.json();
+                    console.log(`📊 Call status: ${callData.status}, Hiring: ${callData.hiring_status}`);
+                    
+                    if (callData.status === 'COMPLETED' && callData.hiring_status) {
+                        // Update the business in the table
+                        setBusinesses(prev => prev.map(business => {
+                            if (business.id === businessId) {
+                                const hiringStatus = 
+                                    callData.hiring_status === 'HIRING' ? 'Hiring' :
+                                    callData.hiring_status === 'NOT_HIRING' ? 'Not Hiring' :
+                                    'Uncertain';
+                                
+                                const verifiedDate = callData.completed_at 
+                                    ? new Date(callData.completed_at).toLocaleDateString('en-US', { 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    })
+                                    : new Date().toLocaleDateString('en-US', { 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    });
+                                
+                                return {
+                                    ...business,
+                                    status: hiringStatus,
+                                    lastVerified: verifiedDate
+                                };
+                            }
+                            return business;
+                        }));
+                        
+                        // Silently update - no alert
+                        console.log(`✅ Call complete! ${businessId} hiring status: ${callData.hiring_status}`);
+                        return; // Stop polling
+                    }
+                }
+                
+                // Continue polling if not complete and haven't exceeded max attempts
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(poll, 5000); // Poll every 5 seconds
+                }
+            } catch (error) {
+                console.error("Error polling call status:", error);
+            }
+        };
+        
+        poll();
+    };
+
+    // Call button action - trigger AI call automation
+    const handleCall = async (b: Business) => {
+        if (!b.phone || b.phone === "N/A") {
+            return;
+        }
+
+        try {
+            // Create form data to send phone number and business info
+            const formData = new FormData();
+            formData.append("phone_number", b.phone);
+            formData.append("business_name", b.name);
+            formData.append("role", keyword || b.jobRole || "positions");
+            formData.append("employment_type", "Full-time");
+            formData.append("location", address || "your area");
+
+            const response = await fetch("http://localhost:8002/make-call", {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Start polling for call results silently
+                pollCallStatus(data.call_sid, b.id);
+            }
+        } catch (error) {
+            console.error("Call error:", error);
         }
     };
 
-    return (
+  return (
         <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-[#e5e5e5]">
             <div className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Preferences Modal */}
                 <PreferencesModal
                     isOpen={isPreferencesOpen}
                     onClose={() => setIsPreferencesOpen(false)}
-                    onLocationUpdate={(loc: string) => setAddress(loc)}
+                    onLocationUpdate={(loc: string, coords?: { latitude: number; longitude: number }) => {
+                        setAddress(loc);
+                        if (coords) {
+                            setUserLocation(coords);
+                        }
+                    }}
                     onRadiusUpdate={(r: number) => setRadius(r)}
                     onKeywordUpdate={(k: string) => setKeyword(k)}
                 />
 
                 {/* Header */}
-                <header className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[96%] max-w-7xl">
+                <header className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-[96%] max-w-[100rem]">
                     <div className="bg-[#111111]/80 backdrop-blur-md rounded-xl shadow-2xl p-2 flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                             <div className="text-xl font-medium text-white ml-[10px]">outreach</div>
@@ -141,12 +269,12 @@ export default function Home() {
                             selectedBusiness={selectedBusiness}
                             onBusinessClick={(b) => setSelectedBusiness(b)}
                         />
-                    </div>
+        </div>
                 </main>
 
                 {/* Business Table */}
                 <div
-                    className={`absolute left-1/2 -translate-x-1/2 w-[96%] max-w-7xl z-10 ${
+                    className={`absolute left-1/2 -translate-x-1/2 w-[96%] max-w-[100rem] z-10 ${
                         isTableExpanded
                             ? "top-[calc(2.5rem+4rem)] bottom-0 rounded-t-xl"
                             : "bottom-2 rounded-xl"
@@ -163,7 +291,7 @@ export default function Home() {
                   {isTableExpanded ? "unfold_more" : "unfold_less"}
                 </span>
                             </button>
-                        </div>
+        </div>
 
                         <div
                             className={`${
@@ -176,6 +304,7 @@ export default function Home() {
                                     <th className="px-6 py-3">Business Name</th>
                                     <th className="px-6 py-3">Job Role</th>
                                     <th className="px-6 py-3">Status</th>
+                                    <th className="px-6 py-3">Last Verified</th>
                                     <th className="px-6 py-3 text-right">Address</th>
                                     <th className="px-6 py-3 text-center">Call</th>
                                 </tr>
@@ -192,7 +321,20 @@ export default function Home() {
                                         >
                                             <td className="px-6 py-3 font-medium">{b.name}</td>
                                             <td className="px-6 py-3 text-[#a3a3a3]">{b.jobRole}</td>
-                                            <td className="px-6 py-3 text-[#a3a3a3]">{b.status}</td>
+                                            <td className="px-6 py-3">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                    b.status === 'Hiring' 
+                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
+                                                        : b.status === 'Not Hiring'
+                                                        ? 'bg-red-500/20 text-red-400 border border-red-500/50'
+                                                        : b.status === 'Uncertain'
+                                                        ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+                                                        : 'text-[#a3a3a3]'
+                                                }`}>
+                                                    {b.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-3 text-[#a3a3a3]">{b.lastVerified || "—"}</td>
                                             <td className="px-6 py-3 text-right text-[#a3a3a3]">{b.address}</td>
                                             <td className="px-6 py-3 text-center">
                                                 <button
@@ -202,14 +344,14 @@ export default function Home() {
                                                     }}
                                                     className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded-md hover:bg-blue-600"
                                                 >
-                                                    {b.phone && b.phone !== "N/A" ? `Call` : "No Number"}
+                                                    Call
                                                 </button>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-3 text-center text-[#666]">
+                                        <td colSpan={6} className="px-6 py-3 text-center text-[#666]">
                                             {loading ? "Fetching results..." : "No businesses found. Try a new search."}
                                         </td>
                                     </tr>
@@ -220,6 +362,6 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-        </div>
-    );
+    </div>
+  );
 }

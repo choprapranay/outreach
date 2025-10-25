@@ -1,16 +1,27 @@
 from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.responses import Response, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from twilio.twiml.voice_response import VoiceResponse, Gather, Say, Play
 from twilio.rest import Client
 import os
 import httpx
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 app = FastAPI()
+
+# Add CORS middleware to allow frontend to call this API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Twilio credentials (will be loaded from .env)
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
@@ -23,13 +34,30 @@ TEST_PHONE_NUMBER = "+12897950739"  # Replace with your actual phone number
 # Backend-B URL
 BACKEND_B_URL = "http://localhost:8000"
 
+# Store call results (in production, use a database)
+call_results = {}
+
 # Mount static files directory to serve audio (must be before routes)
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+@app.get("/call-status/{call_sid}")
+async def get_call_status(call_sid: str):
+    """Get the status and result of a call"""
+    if call_sid in call_results:
+        return call_results[call_sid]
+    else:
+        raise HTTPException(status_code=404, detail="Call not found")
+
 @app.post("/make-call")
-async def make_call():
+async def make_call(
+    phone_number: str = Form(...),
+    business_name: str = Form(...),
+    role: str = Form("Software Engineer"),
+    employment_type: str = Form("Full-time"),
+    location: str = Form("Toronto")
+):
     try:
         # Initialize Twilio client
         client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
@@ -37,18 +65,35 @@ async def make_call():
         # Get the webhook base URL from environment
         base_url = os.getenv('WEBHOOK_BASE_URL', 'http://localhost:8002')
         
-        # Make the call to the hardcoded phone number
+        print(f"Making call to: {business_name} ({phone_number})")
+        print(f"Role: {role}, Type: {employment_type}, Location: {location}")
+        
+        # Make the call to the provided phone number
         call = client.calls.create(
             url=f'{base_url}/webhook/answer',  # Use our webhook
-            to=TEST_PHONE_NUMBER,
+            to=phone_number,
             from_=TWILIO_PHONE_NUMBER
         )
+        
+        # Initialize call result tracking with business info
+        call_results[call.sid] = {
+            'phone_number': phone_number,
+            'business_name': business_name,
+            'role': role,
+            'employment_type': employment_type,
+            'location': location,
+            'status': 'IN_PROGRESS',
+            'hiring_status': 'UNKNOWN',
+            'started_at': None
+        }
         
         return {
             'success': True,
             'call_sid': call.sid,
             'status': call.status,
-            'message': f'Call initiated to {TEST_PHONE_NUMBER}'
+            'phone_number': phone_number,
+            'business_name': business_name,
+            'message': f'Call initiated to {business_name}'
         }
     
     except Exception as e:
@@ -80,19 +125,26 @@ async def answer_call(request: Request):
 
 @app.post("/webhook/greeting-result")
 async def handle_greeting(
-    SpeechResult: str = Form(None)
+    SpeechResult: str = Form(None),
+    CallSid: str = Form(None)
 ):
     """Handle greeting and generate AI response"""
     greeting = SpeechResult or "Hello"
+    call_sid = CallSid or ""
+    
     print(f"\n🎤 Business greeting: {greeting}")
+    print(f"📞 Call SID: {call_sid}")
     
     response = VoiceResponse()
     
-    # Business info (will be dynamic later)
-    BUSINESS_NAME = "Example Business"
-    ROLE = "Software Engineer"
-    EMPLOYMENT_TYPE = "Full-time"
-    LOCATION = "Toronto"
+    # Get business info from stored call data
+    business_info = call_results.get(call_sid, {})
+    BUSINESS_NAME = business_info.get('business_name', 'the business')
+    ROLE = business_info.get('role', 'Software Engineer')
+    EMPLOYMENT_TYPE = business_info.get('employment_type', 'Full-time')
+    LOCATION = business_info.get('location', 'Toronto')
+    
+    print(f"📋 Personalizing for: {BUSINESS_NAME}, Role: {ROLE}")
     
     # Generate AI response using backend-b
     try:
@@ -203,12 +255,15 @@ async def handle_greeting(
 
 @app.post("/webhook/hiring-result")
 async def handle_hiring_response(
-    SpeechResult: str = Form(None)
+    SpeechResult: str = Form(None),
+    CallSid: str = Form(None)
 ):
     """Handle the business's response - adaptive conversation until we know hiring status"""
     hiring_response = SpeechResult or ""
+    call_sid = CallSid or ""
     
     print(f"\n🎤 Business response: {hiring_response}")
+    print(f"📞 Call SID: {call_sid}")
     
     response = VoiceResponse()
     hiring_status = "UNCERTAIN"
@@ -267,14 +322,16 @@ async def handle_hiring_response(
                 # Generate natural conversational follow-up
                 follow_up_text = None
                 try:
+                    # Get business info from stored call data
+                    business_info = call_results.get(call_sid, {})
                     follow_up_response = await client.post(
                         f"{BACKEND_B_URL}/generate_conversation_response",
                         data={
                             "their_message": hiring_response,
-                            "business_name": "Example Business",
-                            "role": "Software Engineer",
-                            "employment_type": "Full-time",
-                            "location": "Toronto",
+                            "business_name": business_info.get('business_name', 'the business'),
+                            "role": business_info.get('role', 'Software Engineer'),
+                            "employment_type": business_info.get('employment_type', 'Full-time'),
+                            "location": business_info.get('location', 'Toronto'),
                             "is_first_message": "false"
                         }
                     )
@@ -344,6 +401,13 @@ async def handle_hiring_response(
             
             # If we have a clear answer (HIRING or NOT_HIRING), end the call
             print(f"✅ Clear status determined, ending call...")
+            
+            # Store the final result
+            if call_sid and call_sid in call_results:
+                call_results[call_sid]['hiring_status'] = hiring_status
+                call_results[call_sid]['status'] = 'COMPLETED'
+                call_results[call_sid]['completed_at'] = datetime.now().isoformat()
+                print(f"💾 Stored result for {call_sid}: {hiring_status}")
             
             # Generate BosonAI thank you audio
             print(f"🤖 Generating BosonAI thank you...")

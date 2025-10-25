@@ -7,7 +7,7 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 interface PreferencesModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onLocationUpdate: (address: string) => void;
+    onLocationUpdate: (address: string, coords?: { latitude: number; longitude: number }) => void;
     onRadiusUpdate: (radius: number) => void;
     onKeywordUpdate: (keyword: string) => void;
 }
@@ -53,15 +53,33 @@ export default function PreferencesModal({
         setShowSuggestions(false);
     };
 
-    const handleUseCurrentLocation = () => {
+    const handleUseCurrentLocation = async () => {
         setIsGettingLocation(true);
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (position) => {
+                async (position) => {
                     const { latitude, longitude } = position.coords;
-                    setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                    let locationName = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    
+                    // Reverse geocode to get readable address
+                    try {
+                        const res = await fetch(
+                            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}&limit=1`
+                        );
+                        const data = await res.json();
+                        
+                        if (data.features && data.features.length > 0) {
+                            locationName = data.features[0].place_name;
+                        }
+                    } catch (err) {
+                        console.error("Error reverse geocoding:", err);
+                    }
+                    
+                    setAddress(locationName);
                     setIsGettingLocation(false);
-                    // optional future: reverse-geocode this into a readable address
+                    
+                    // Immediately update the map with current coordinates
+                    onLocationUpdate(locationName, { latitude, longitude });
                 },
                 (error) => {
                     console.error("Error getting location:", error);
@@ -75,8 +93,27 @@ export default function PreferencesModal({
         }
     };
 
-    const handleApply = () => {
-        onLocationUpdate(address);
+    const handleApply = async () => {
+        // Geocode the address to get coordinates
+        try {
+            const res = await fetch(
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+                    address
+                )}.json?access_token=${MAPBOX_TOKEN}&limit=1`
+            );
+            const data = await res.json();
+            
+            if (data.features && data.features.length > 0) {
+                const [lng, lat] = data.features[0].center;
+                onLocationUpdate(address, { latitude: lat, longitude: lng });
+            } else {
+                onLocationUpdate(address);
+            }
+        } catch (err) {
+            console.error("Error geocoding address:", err);
+            onLocationUpdate(address);
+        }
+        
         onRadiusUpdate(radius * 1000); // convert km to meters
         onKeywordUpdate(keyword);
         onClose();

@@ -3,7 +3,7 @@ import os
 import wave
 import base64
 import uvicorn
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Optional
 from dotenv import load_dotenv
@@ -30,17 +30,14 @@ class BusinessInput(BaseModel):
 
 """
 def generate_call_script(business_name: str, location: str, role: str, employment_type: str, notes: str = "") -> str:
-
-
-    base_script = f"""Hello, this is an automated inquiry call, I'm calling to ask if {business_name} is currently hiring for the role of {employment_type}{role} in {location}"""
+    base_script = f"Hello, this is an automated inquiry call, I'm calling to ask if {business_name} is currently hiring for the role of {employment_type} {role} in {location}"
 
     if notes:
-        base_script += f"{notes}. "
+        base_script += f" {notes}."
     
-    base_script += """Please respond with whether you are currently hiring or not at the end of this message, thank you for your time!"""
+    base_script += " Please respond with whether you are currently hiring or not at the end of this message, thank you for your time!"
     
     return base_script
-"""
 """
 
 def encode_audio_to_base64(file_path: str) -> str: 
@@ -183,7 +180,7 @@ Examples:
         )
         
         analysis = response_text.choices[0].message.content
-        print(f"\n📊 Hiring analysis:\n{analysis}")
+        print(f"\n📊 Raw LLM Response:\n{analysis}\n")
         
         # Parse response
         result = {
@@ -193,6 +190,7 @@ Examples:
         }
         
         for line in analysis.strip().split('\n'):
+            line = line.strip()
             if line.startswith("STATUS:"):
                 result["status"] = line.split(":", 1)[1].strip()
             elif line.startswith("CONFIDENCE:"):
@@ -200,6 +198,7 @@ Examples:
             elif line.startswith("DETAILS:"):
                 result["details"] = line.split(":", 1)[1].strip()
         
+        print(f"📊 Parsed result: {result}\n")
         return result
     
     except Exception as e:
@@ -239,6 +238,119 @@ async def generate_audio_endpoint(request: TTSRequest):
             "audio_path": audio_path,
             "text": request.text,
             "voice": request.voice
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate_adaptive_greeting")
+async def generate_adaptive_greeting_endpoint(
+    greeting: str = Form(...),
+    business_name: str = Form(...),
+    role: str = Form(...),
+    employment_type: str = Form(...),
+    location: str = Form(...)
+):
+    """
+    Generate adaptive greeting based on what the business says
+    """
+    try:
+        business_info = BusinessInput(
+            business_name=business_name,
+            phone="",
+            location=location,
+            role=role,
+            employment_type=employment_type,
+            notes=""
+        )
+        adaptive_response = generate_adaptive_greeting(greeting, business_info)
+        return {
+            "success": True,
+            "response": adaptive_response
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate_conversation_response")
+async def generate_conversation_response_endpoint(
+    their_message: str = Form(...),
+    business_name: str = Form(...),
+    role: str = Form(...),
+    employment_type: str = Form(...),
+    location: str = Form(...),
+    is_first_message: str = Form("true")
+):
+    """
+    Generate natural conversational response - works for initial greeting and follow-ups
+    """
+    try:
+        is_first = is_first_message.lower() == "true"
+        
+        system_prompt = """You are a friendly professional recruiter making a phone call.
+
+Your goal: Have a natural conversation and find out if they're hiring for the position.
+
+CRITICAL RULES:
+1. ALWAYS answer their questions directly and naturally first
+2. Be warm, human, and conversational
+3. Keep responses SHORT (1-2 sentences max)
+4. After answering, smoothly transition to asking about hiring
+5. Sound like a real person having a conversation, not a robot
+
+Examples:
+- They say "Hello?" → "Hi! I'm calling to see if you're hiring for Software Engineers."
+- They say "Who is this?" → "Oh hi! I'm a recruiter reaching out. Are you folks currently hiring for any Software Engineer positions?"
+- They say "Can I ask who this is?" → "Of course! I'm calling to ask about job openings. Are you hiring for Software Engineers right now?"
+- They say "What company are you from?" → "I'm reaching out on behalf of candidates. Are you currently looking for Software Engineers?"
+- They say "What position?" → "Full-time Software Engineer in Toronto. Is that something you have open?"
+- They say "How's your day?" → "Pretty good, thanks for asking! I'm calling to see if you're hiring for Software Engineers."
+- They say "We might be" → "Oh great! Do you have an open Software Engineer position right now?"
+- They say "Send an email" → "Sure thing! Just to confirm, are you currently hiring for Software Engineers?"
+- They say "I'm busy" → "No problem, quick question - are you hiring for Software Engineers? Just yes or no."
+
+Be natural, friendly, and human. Actually answer what they ask, then bring it back to hiring.
+
+Just respond with the message - no labels or formatting."""
+
+        user_prompt = f"""Position: {employment_type} {role}
+Location: {location}
+Business: {business_name}
+
+They just said: "{their_message}"
+
+How do I respond naturally?"""
+
+        response = client.chat.completions.create(
+            model="Qwen3-32B-non-thinking-Hackathon",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=100,
+            temperature=0.8
+        )
+        
+        conversation_response = response.choices[0].message.content.strip()
+        print(f"\n💬 Conversational response: {conversation_response}")
+        
+        return {
+            "success": True,
+            "response": conversation_response
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/analyze_hiring_status")
+async def analyze_hiring_status_endpoint(response_text: str = Form(...)):
+    """
+    Analyze hiring status from text response
+    """
+    try:
+        result = parse_hiring_status(response_text)
+        return {
+            "success": True,
+            "status": result["status"],
+            "confidence": result["confidence"],
+            "details": result["details"]
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

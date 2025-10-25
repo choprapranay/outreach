@@ -12,8 +12,11 @@ export interface Business {
     jobRole: string;
     status: string;
     lastContact: string;
+    lastVerified?: string;
     latitude: number;
     longitude: number;
+    address?: string;
+    phone?: string;
 }
 
 interface MapComponentProps {
@@ -199,9 +202,10 @@ export default function MapComponent({
         }
 
         return {
-            type: "Feature",
+            type: "Feature" as const,
+            properties: {},
             geometry: {
-                type: "Polygon",
+                type: "Polygon" as const,
                 coordinates: [coords],
             },
         };
