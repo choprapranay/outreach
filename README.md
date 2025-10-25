@@ -24,8 +24,7 @@ Then edit `.env` with your API keys:
 # Google Places API
 GDC_API_KEY=your_google_places_api_key_here
 
-# AI Services
-HIGGS_API_KEY=your_higgs_api_key_here
+# BosonAI
 BOSON_API_KEY=your_boson_api_key_here
 
 # Twilio
@@ -43,6 +42,12 @@ NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
 ```bash
 ./start.sh
 ```
+
+The script automatically:
+- Installs all dependencies (first time only)
+- Distributes `.env` to all services
+- Starts ngrok and updates webhook URL
+- Launches all services
 
 Open http://localhost:3000
 
@@ -62,7 +67,6 @@ Open http://localhost:3000
 ## API Keys
 
 - **Google Places API**: Geocoding, Places, Place Details
-- **Higgs Audio API**: Speech recognition
 - **BosonAI API**: Text-to-speech
 - **Twilio**: Voice calls (Account SID, Auth Token, Phone Number)
 - **Mapbox**: Interactive maps

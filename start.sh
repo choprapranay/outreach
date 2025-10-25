@@ -26,7 +26,6 @@ EOF
 
 # Backend-B .env
 cat > backend-b/.env << EOF
-HIGGS_API_KEY=${HIGGS_API_KEY}
 BOSON_API_KEY=${BOSON_API_KEY}
 EOF
 
