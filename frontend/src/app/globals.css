@@ -10,6 +10,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-primary: #3b82f6;
+  --color-background-dark: #0a0a0a;
+  --color-surface-dark: #111111;
+  --color-text-dark: #e5e5e5;
+  --color-text-secondary-dark: #a3a3a3;
+  --color-border-dark: #262626;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +28,10 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+}
+
+.material-icons {
+  font-size: 24px;
+  vertical-align: middle;
 }
