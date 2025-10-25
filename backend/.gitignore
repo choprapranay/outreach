@@ -1,0 +1,53 @@
+ --- Virtual Environment ---
+.venv/
+
+# --- Python Cache / Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- IDE and Editor Files ---
+.idea/
+.vscode/
+*.iml
+
+# --- Build / Distribution ---
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- OS-Specific Files ---
+.DS_Store
+Thumbs.db
+
+# --- Logs and Databases ---
+*.log
+*.sqlite3
+*.db
+
+# --- Environment Variables ---
+.env
+.env.*
+*.ini
+*.cfg
+
+# --- Pytest / Coverage ---
+.coverage
+htmlcov/
+.cache/
+pytest_cache/
+.tox/
+.mypy_cache/
+
+# --- Uvicorn / Gunicorn PID Files ---
+*.pid
+
+# --- Notebooks / Temporary files ---
+*.ipynb_checkpoints
+*.tmp
+*.bak
+
+# --- Misc ---
+*.swp
+*.swo
