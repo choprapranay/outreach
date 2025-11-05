@@ -2,8 +2,10 @@
 
 AI-powered voice agent that calls businesses to find and record which local businsesses are hiring for a certain role.
 
-### Demo VIdeo
-https://www.tella.tv/video/local-job-hunting-made-easy-aoom
+### Demo Video
+https://github.com/user-attachments/assets/d1151283-98c8-4b4e-91e8-04eed7a7ffe4
+
+
 
 ## Setup
 
