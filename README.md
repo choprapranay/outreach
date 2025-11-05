@@ -1,6 +1,6 @@
 # Outreach
 
-AI-powered voice agent that calls businesses to find job opportunities.
+AI-powered voice agent that calls businesses to find and record which local businsesses are hiring for a certain role.
 
 ## Setup
 
